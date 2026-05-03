@@ -115,7 +115,6 @@ impl FilterSignal {
         }
         acc
     }
-
 }
 
 /// One QMF analysis stage: one filter signal, two filter sets, two
@@ -318,7 +317,8 @@ mod tests {
     fn outer_filters_are_mirror_pair() {
         for k in 0..16 {
             assert_eq!(
-                OUTER_COEFFS_1[k], OUTER_COEFFS_0[15 - k],
+                OUTER_COEFFS_1[k],
+                OUTER_COEFFS_0[15 - k],
                 "outer mirror property fails at k={k}"
             );
         }
@@ -328,7 +328,8 @@ mod tests {
     fn inner_filters_are_mirror_pair() {
         for k in 0..16 {
             assert_eq!(
-                INNER_COEFFS_1[k], INNER_COEFFS_0[15 - k],
+                INNER_COEFFS_1[k],
+                INNER_COEFFS_0[15 - k],
                 "inner mirror property fails at k={k}"
             );
         }
