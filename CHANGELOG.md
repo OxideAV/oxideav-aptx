@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- replaced placeholder Haar 2-tap QMF with the spec 16-tap two-stage
+  cascade from `docs/audio/aptx/data/aptx-qmf-coefficients.md`
+  (outer + inner, mirror-paired filter sets, 23 / 21 / 23 / 22
+  rounded shifts)
+- replaced placeholder quadratic-spaced quantizer tables with the
+  spec-shipped `quantize_intervals`, `invert_quantize_dither_factors`,
+  `quantize_dither_factors`, and `quantize_factor_select_offset` tables
+  for both classic and HD per `docs/audio/aptx/data/aptx-quantizer-tables.md`
+- adopted the spec per-subband `factor_max` caps (`0x11FF / 0x14FF /
+  0x16FF / 0x15FF`) and the spec quantization-factor lookup
+  `(QUANTIZATION_FACTORS[(fs & 0xFF) >> 3] << 11) >> ((factor_max −
+  fs) >> 8)` in [`subband`]
+- adopted the spec `factor_select` leaky-integrator update with leak
+  constant `32620 / 32768`
+- subband encoder now scales the diff search by `<< 19` to mirror the
+  spec decoder's `(qf × qr) >> 19` reconstruction-difference path
+- dither generator's codeword-history *update* equation now matches
+  the spec (`history = (history << 4) | field` with field built from
+  `LF[0] | LF[1] | MLF[1] | MHF[0]`); the per-subband dither output
+  mapping is still an LFSR mixer pending a round-3 follow-up
+
+### Added
+
+- spec sanity-check tests (mirror-pair property, dominant tap, DC
+  sums-agree, factor_max caps, dither field packing)
+- subband self-roundtrip tracking test (PSNR > 30 dB on a slow tone)
+
+### Performance
+
+- self-roundtrip PSNR @ 500 Hz: 22 dB → 29 dB (classic), 21 dB →
+  29 dB (HD)
+- ffmpeg-encoded stream decode PSNR: −12 dB → +4 dB (still well
+  short of bit-exact; gap is the dither output mapping + a few
+  predictor constants)
+
 ## [0.0.1] - 2026-05-02
 
 ### Added

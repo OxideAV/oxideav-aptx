@@ -22,43 +22,54 @@ big-endian stereo blocks. No CRC, no length, no sample-rate signalling.
 The 8-block parity-rotation on the HF LSB carries the entire
 synchronization story.
 
-## Compatibility — clean-room placeholders
+## Compatibility
 
-The QMF coefficients and per-subband quantizer-interval / dither /
-step-size tables in this crate are **clean-room placeholders**, not the
-Qualcomm-specified values. They are chosen so that this crate's encoder
-and decoder roundtrip cleanly against each other, but the on-the-wire
-bytes are **not bit-identical** with FFmpeg's `aptx`/`aptx_hd` codec.
+Round 2 (May 2026) replaced the round-1 clean-room placeholders with
+the spec-shipped numerical data published in
+[`docs/audio/aptx/data/aptx-qmf-coefficients.md`](https://github.com/OxideAV/oxideav-workspace/blob/master/docs/audio/aptx/data/aptx-qmf-coefficients.md)
+and
+[`docs/audio/aptx/data/aptx-quantizer-tables.md`](https://github.com/OxideAV/oxideav-workspace/blob/master/docs/audio/aptx/data/aptx-quantizer-tables.md).
+The same numerical values appear byte-identically in two unrelated
+open-source projects (FFmpeg `libavcodec/aptx.{c,h}` and libopenaptx
+by Pali Rohár); the sidecars reproduce them as functional public
+data.
 
-This is by design: the structural reverse-engineering trace at
-`docs/audio/aptx/aptx-trace-reverse-engineering.md` deliberately omits
-the numerical content of those tables (Qualcomm specifies them under
-NDA, and the trace doc respects that), so a clean-room workspace cannot
-ship them either.
+Concretely, the active spec content is:
 
-When the real tables become available (e.g. through a published
-Qualcomm spec), bit-exact interop is a drop-in swap of the constants in:
+- `src/qmf.rs` — 16-tap outer + inner QMF coefficient sets + the
+  spec analysis/synthesis right-shifts (23 / 21 / 23 / 22).
+- `src/tables.rs` — every per-(variant, subband) `quantize_intervals`,
+  `invert_quantize_dither_factors`, `quantize_dither_factors`, and
+  `quantize_factor_select_offset` table from the sidecar; the common
+  32-entry `QUANTIZATION_FACTORS`; and the per-subband `factor_max`
+  caps (`0x11FF`, `0x14FF`, `0x16FF`, `0x15FF`).
+- `src/subband.rs` — the spec leaky-integrator `factor_select` update
+  (leak constant `32620 / 32768`) and the spec quantization-factor
+  lookup `(QUANTIZATION_FACTORS[(fs & 0xFF) >> 3] << 11) >>
+  ((factor_max − fs) >> 8)`.
 
-- `src/qmf.rs` — `OUTER_COEFFS`, `INNER_COEFFS`
-- `src/tables.rs` — `QUANTIZATION_FACTORS`, plus the
-  `make_interval_table` / `make_dither_factors` /
-  `make_factor_select_offsets` helpers
-- `src/subband.rs` — the predictor update rule constants
-
-The rest of the pipeline (block layout, parity sync, channel state,
-frame mux) is structurally complete.
+The dither output mapping in `src/dither.rs` still uses an LFSR
+mixer; the codeword-history *update* equation matches the spec but
+the per-subband output extraction is approximate (the spec's `×
+5_184_443` post-shift bit-position decomposition is a follow-on
+refinement). Combined with small residual differences in the
+predictor short-term constants and the parity-injection visit order,
+this is what keeps the FFmpeg-interop path from reaching full
+bit-exactness in this round.
 
 ## Status
 
 | Component | Status |
 |-----------|--------|
-| 4-band QMF analysis + synthesis | implemented (placeholder coeffs) |
-| Per-subband ADPCM + dither | implemented (placeholder tables) |
+| 4-band QMF analysis + synthesis (16-tap, spec coefficients) | implemented |
+| Per-subband ADPCM + spec quantizer tables | implemented |
+| Per-subband `factor_max` caps + spec leaky-integrator update | implemented |
+| Spec quantization-factor lookup (`(QF[idx] << 11) >> shift`) | implemented |
 | Codeword pack/unpack (classic 16-bit + HD 24-bit) | implemented |
 | 8-block parity-rotation sync (encode-side injection + decode-side check) | implemented |
-| Self-roundtrip encoder ↔ decoder | passes |
-| Bit-identical interop with FFmpeg `aptx` | **gated on Qualcomm tables** |
-| Bit-identical interop with FFmpeg `aptx_hd` | **gated on Qualcomm tables** |
+| Self-roundtrip encoder ↔ decoder (~29 dB PSNR @ 500 Hz) | passes |
+| Decoder of FFmpeg `aptx` stream produces signal (PSNR > 0 dB, was −12 dB) | passes |
+| Bit-identical interop with FFmpeg `aptx` / `aptx_hd` | needs spec dither output rule (round 3) |
 
 ## Installation
 

@@ -22,13 +22,31 @@
 //!
 //! # Compatibility
 //!
-//! The QMF coefficients and per-subband quantizer-interval / dither /
-//! step-size tables are **clean-room placeholders** chosen for
-//! self-roundtrip stability. Bit-exact interop with FFmpeg's
-//! `aptx`/`aptx_hd` requires the Qualcomm-specified numerical tables,
-//! which are NDA-only and which the trace doc deliberately omits.
-//! When those tables become available, swap them into [`tables`] and
-//! [`qmf`] — the rest of the pipeline is structurally complete.
+//! Round 2 (May 2026) replaced the round-1 clean-room placeholders
+//! with the spec-shipped data:
+//!
+//! * [`qmf`] now carries the 16-tap two-stage QMF coefficient sets
+//!   from `docs/audio/aptx/data/aptx-qmf-coefficients.md` (numerical
+//!   values shared byte-identically by FFmpeg `aptx.h` and
+//!   libopenaptx).
+//! * [`tables`] carries the per-(variant, subband) quantizer interval
+//!   / dither / factor-select-offset tables and the common 32-entry
+//!   `QUANTIZATION_FACTORS` step-size table from
+//!   `docs/audio/aptx/data/aptx-quantizer-tables.md`, plus the spec
+//!   per-subband `factor_max` caps (`0x11FF / 0x14FF / 0x16FF /
+//!   0x15FF`) and prediction orders (24 / 12 / 6 / 12).
+//! * [`subband`] uses the spec-stated `factor_select` leaky-integrator
+//!   update (`32620 / 32768`) and the spec quantization-factor lookup
+//!   `(QUANTIZATION_FACTORS[(fs & 0xFF) >> 3] << 11) >> ((factor_max
+//!   − fs) >> 8)`.
+//!
+//! The dither output mapping in [`dither`] still uses an LFSR mixer
+//! (the codeword-history *update* equation matches the spec; only the
+//! per-subband output extraction is approximate). Full bit-exactness
+//! with FFmpeg's `aptx`/`aptx_hd` therefore needs the spec dither
+//! output rule (`× 5_184_443` post-shift decomposition) and the exact
+//! predictor-update integer constants, both of which are tracked for
+//! a follow-on round.
 //!
 //! # Quick use
 //!

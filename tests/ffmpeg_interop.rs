@@ -1,13 +1,13 @@
 //! Integration test: decode a real ffmpeg-encoded aptX stream.
 //!
-//! This crate ships **clean-room placeholder** quantizer tables and
-//! QMF coefficients, so bit-exact interop with ffmpeg is NOT
-//! expected. What we verify here is that the decoder structurally
-//! handles a real aptX byte stream end-to-end without panicking, and
-//! we capture the actual PSNR for documentation. When the
-//! Qualcomm-specified tables become available and are dropped into
-//! `tables.rs` / `qmf.rs`, this test should start producing high
-//! PSNR; its presence makes the upgrade visible.
+//! This crate now ships the spec-shipped 16-tap QMF coefficients and
+//! per-subband quantizer tables (per `docs/audio/aptx/data/`), so
+//! decoder output of an ffmpeg-encoded stream is signal-shaped rather
+//! than noise. Full bit-exact interop with FFmpeg's `aptx` decoder
+//! additionally requires the spec dither output mapping and exact
+//! predictor-update integer constants; this test captures the
+//! current PSNR and asserts the post-round-2 baseline (PSNR > 0 dB,
+//! i.e. the decoder recovers more signal than noise).
 //!
 //! The test is gated on the `ffmpeg` binary and silently skips if
 //! it's unavailable (so CI without the optional toolchain still
@@ -138,19 +138,31 @@ fn decode_ffmpeg_aptx_classic_runs_without_panic() {
         "decoder produced 0 PCM samples for a non-empty stream"
     );
 
-    // Best-shift PSNR against the reference WAV. We *expect* this to
-    // be poor (placeholder tables); the assertion is just that we
-    // produce output, not that it's accurate.
+    // Best-shift PSNR against the reference WAV. With the spec QMF
+    // coefficients + quantizer tables the decoder produces signal
+    // (not noise) but is not yet bit-exact with ffmpeg — full
+    // bit-exactness needs the spec dither output mapping and exact
+    // predictor constants, both of which are deferred to a later
+    // round.
     let reference = read_wav_pcm_s16(&wav_path);
     let snr = best_psnr(&reference, &decoded);
-    eprintln!("ffmpeg-encoded aptX vs oxideav-aptx decoder PSNR = {snr:.2} dB (placeholder tables — bit-exact interop gated on Qualcomm tables)");
-    // Per task spec: aptX is lossy with low fixed bit rate; PSNR
-    // ~30-40 dB is normal for matched implementations. With our
-    // placeholder tables the value will be much lower; we still
-    // assert the decoder produced *some* signal energy, not zero.
+    eprintln!(
+        "ffmpeg-encoded aptX vs oxideav-aptx decoder PSNR = {snr:.2} dB \
+         (spec QMF + quantizer tables active; dither / predictor \
+         residuals deferred)"
+    );
     assert!(
         decoded.iter().any(|&s| s != 0),
         "decoder output is all zeros — pipeline is not running"
+    );
+    // Post-round-2 envelope: with the spec QMF + tables the decoder
+    // recovers a positive-PSNR approximation of the source. Earlier
+    // (placeholder-tables) baselines were ~-12 dB; this guard catches
+    // regressions on the structural correctness of the decoder.
+    assert!(
+        snr > 0.0,
+        "ffmpeg-interop PSNR {snr:.2} dB is below the post-round-2 \
+         envelope (PSNR > 0 dB)"
     );
 }
 

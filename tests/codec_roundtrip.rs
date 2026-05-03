@@ -83,12 +83,15 @@ fn roundtrip(params: &CodecParameters, pcm: &[i16]) -> Vec<i16> {
 }
 
 /// Best-shift PSNR (dB) between `original` and `decoded`. Considers
-/// shifts 0..=64 to absorb the QMF + ADPCM startup latency.
+/// shifts 0..=256 to absorb the cascaded QMF + ADPCM startup latency
+/// (the two-stage 16-tap QMF cascade alone has a group delay of ~66
+/// samples per channel; the full encode→decode round-trip stacks two
+/// of those plus the ADPCM convergence transient).
 fn psnr(original: &[i16], decoded: &[i16]) -> f64 {
     let n_total = original.len().min(decoded.len());
-    let skip_head = (n_total / 4).min(256);
+    let skip_head = (n_total / 4).min(512);
     let mut best = f64::NEG_INFINITY;
-    for delay in 0..64 {
+    for delay in 0..256 {
         if skip_head + delay >= n_total {
             continue;
         }
@@ -117,7 +120,9 @@ fn psnr(original: &[i16], decoded: &[i16]) -> f64 {
 
 #[test]
 fn classic_self_roundtrip_500hz_44k1() {
-    // 500 Hz, 0.5 s stereo at 44.1 kHz.
+    // 500 Hz, 0.5 s stereo at 44.1 kHz. With the spec QMF coefficients
+    // and quantizer tables the self-roundtrip PSNR clears the
+    // ~25 dB classic envelope.
     let pcm = sine_stereo(22050, 500.0, 44_100, 8_000.0);
     let decoded = roundtrip(&classic_params(44_100), &pcm);
     assert!(
@@ -129,14 +134,16 @@ fn classic_self_roundtrip_500hz_44k1() {
     let snr = psnr(&pcm, &decoded);
     eprintln!("aptX classic 500 Hz @ 44.1 kHz self-roundtrip PSNR = {snr:.2} dB");
     assert!(
-        snr > 5.0,
-        "PSNR {snr:.2} dB below 5 dB self-roundtrip floor"
+        snr > 25.0,
+        "PSNR {snr:.2} dB below 25 dB classic self-roundtrip envelope"
     );
 }
 
 #[test]
 fn hd_self_roundtrip_500hz_48k() {
-    // 500 Hz, 0.5 s stereo at 48 kHz.
+    // 500 Hz, 0.5 s stereo at 48 kHz. HD's wider quantizer codewords
+    // give it ~5-10 dB more PSNR than classic; the assertion is loose
+    // enough to be a stable regression-only check.
     let pcm = sine_stereo(24000, 500.0, 48_000, 8_000.0);
     let decoded = roundtrip(&hd_params(48_000), &pcm);
     assert!(
@@ -148,8 +155,8 @@ fn hd_self_roundtrip_500hz_48k() {
     let snr = psnr(&pcm, &decoded);
     eprintln!("aptX HD 500 Hz @ 48 kHz self-roundtrip PSNR = {snr:.2} dB");
     assert!(
-        snr > 5.0,
-        "PSNR {snr:.2} dB below 5 dB self-roundtrip floor (HD should beat classic)"
+        snr > 25.0,
+        "PSNR {snr:.2} dB below 25 dB HD self-roundtrip envelope"
     );
 }
 
