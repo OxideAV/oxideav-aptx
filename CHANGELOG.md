@@ -6,6 +6,13 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.1](https://github.com/OxideAV/oxideav-aptx/releases/tag/v0.0.1) - 2026-05-29
+
+### Other
+
+- round 189: declare CODEC_ID_STR + WAVE_FORMAT_TAG_APTX (RFC 2361 §A.24)
+- Round 0 — clean-room rebuild scaffold (orphan master)
+
 ### Added
 
 - `CODEC_ID_STR = "aptx"` — stable codec id for the framework
