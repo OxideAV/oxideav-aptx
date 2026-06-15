@@ -5,14 +5,14 @@ Pure-Rust aptX (classic + HD) audio codec for the
 
 ## Status
 
-**Round 0 — clean-room rebuild scaffold (NDA-blocked).** This
-`master` branch is a fresh orphan. The previous implementation was
-retired alongside the docs audit dated 2026-05-06 (see
+**Clean-room rebuild scaffold (NDA-blocked).** This `master` branch is
+a fresh orphan. The previous implementation was retired alongside the
+docs audit dated 2026-05-06 (see
 [`AUDIT-2026-05-06.md`](https://github.com/OxideAV/docs/blob/master/AUDIT-2026-05-06.md)),
-which found that the source-of-record trace document for this codec
-was authored with a methodology that did not satisfy clean-room
-separation. The prior history is preserved on the `old` branch for
-archival but is forbidden input for the rebuild.
+which found that the source-of-record trace document for this codec was
+authored with a methodology that did not satisfy clean-room separation.
+The prior history is preserved on the `old` branch for archival but is
+forbidden input for the rebuild.
 
 aptX (classic, HD, and Adaptive) is a Qualcomm-licensed Bluetooth
 audio codec; the bitstream-level spec is distributed under NDA and
@@ -63,6 +63,7 @@ are, in order of preference:
    `docs/audio/aptx/tables/`.
 2. A clean-room observer-trace session that records the input /
    output PCM of an opaque encoder binary on a fixture corpus
-   without reading its source — analogous to the JPEG-XL libjxl
-   trace methodology already used in `docs/image/jpegxl/`.
+   without reading its source — analogous to the JPEG-XL
+   reference-encoder trace methodology already used in
+   `docs/image/jpegxl/`.
 3. License negotiation. Not pursued in this workspace.
