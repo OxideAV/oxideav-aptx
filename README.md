@@ -1,5 +1,7 @@
 # oxideav-aptx
 
+[![CI](https://github.com/OxideAV/oxideav-aptx/actions/workflows/ci.yml/badge.svg)](https://github.com/OxideAV/oxideav-aptx/actions/workflows/ci.yml) [![crates.io](https://img.shields.io/crates/v/oxideav-aptx.svg)](https://crates.io/crates/oxideav-aptx) [![docs.rs](https://docs.rs/oxideav-aptx/badge.svg)](https://docs.rs/oxideav-aptx) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Pure-Rust aptX (classic + HD) audio codec for the
 [oxideav](https://github.com/OxideAV/oxideav-workspace) framework.
 
