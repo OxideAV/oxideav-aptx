@@ -6,6 +6,10 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- edition 2024, MSRV 1.95.
+
 ## [0.0.1](https://github.com/OxideAV/oxideav-aptx/releases/tag/v0.0.1) - 2026-05-29
 
 ### Other
