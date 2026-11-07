@@ -6,6 +6,18 @@ versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.0.2](https://github.com/OxideAV/oxideav-aptx/compare/v0.0.1...v0.0.2) - 2026-10-23
+
+### Other
+
+- edition 2024, MSRV 1.95
+- add CI / crates.io / docs.rs / MIT-license badges
+- refresh to current status, drop per-round changelog cruft
+- drop release-plz.toml — use release-plz defaults across the workspace
+- release v0.0.2
+- round 189: declare CODEC_ID_STR + WAVE_FORMAT_TAG_APTX (RFC 2361 §A.24)
+- Round 0 — clean-room rebuild scaffold (orphan master)
+
 ### Changed
 
 - edition 2024, MSRV 1.95.
